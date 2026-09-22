@@ -1,0 +1,13 @@
+[package]
+name = "model_forge"
+version = "0.6.0"
+edition = "2024"
+license = "MIT"
+authors = ["nazeeh111"]
+description = "Numerical modeling, polynomial calculus, and scientific solvers"
+repository = "https://github.com/nazeeh111/ModelForge"
+readme = "../README.md"
+
+[dependencies]
+spindalis = { path = "../spindalis", version = "0.6.0" }
+model_forge_macros = { path = "../model_forge_macros", version = "0.1.2" }

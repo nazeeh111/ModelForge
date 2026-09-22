@@ -1,0 +1,25 @@
+[package]
+name = "spindalis"
+version = "0.6.0"
+edition = "2024"
+authors = ["nazeeh111"]
+license = "MIT"
+
+description = "A bioinformatics-focused library for numerical modeling, optimisation, and simulation written in Rust"
+repository = "https://github.com/nazeeh111/ModelForge"
+readme = "../README.md"
+
+keywords = ["polynomials", "derivative", "integral", "solvers", "decomposition"]
+
+[lib]
+name = "spindalis"
+path = "src/lib.rs"
+
+[dependencies]
+jedvek = "0.2.0"
+spindalis_core = { path = "../spindalis_core", version = ">=0.2.0" }
+spindalis_macros = { path = "../spindalis_macros", version = "0.1.0" }
+
+[dev-dependencies]
+rand = "0.10.0"
+rand_distr = "0.6.0"

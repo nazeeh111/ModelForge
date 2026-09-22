@@ -1,0 +1,9 @@
+[package]
+name = "spindalis_core"
+version = "0.3.0"
+edition = "2024"
+authors = ["nazeeh111"]
+license = "MIT"
+
+description = "Core polynomial logic for ModelForge package"
+repository = "https://github.com/nazeeh111/ModelForge"

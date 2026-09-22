@@ -1,0 +1,25 @@
+name: Build and test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [model_forge, model_forge_macros, spindalis, spindalis_core, spindalis_macros]
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build
+        run: cargo build --verbose -p ${{ matrix.package }}
+      - name: Run tests
+        run: cargo test --verbose -p ${{ matrix.package }}

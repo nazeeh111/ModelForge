@@ -1,0 +1,15 @@
+[package]
+name = "model_forge_macros"
+version = "0.1.2"
+edition = "2024"
+license = "MIT"
+authors = ["nazeeh111"]
+description = "Compile-time polynomial parsing for ModelForge"
+repository = "https://github.com/nazeeh111/ModelForge"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0.47"
+spindalis_core = { path = "../spindalis_core", version = ">=0.2.0" }

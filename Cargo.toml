@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "model_forge",
+    "model_forge_macros",
+    "spindalis",
+    "spindalis_core",
+    "spindalis_macros",
+]
+resolver = "2"
