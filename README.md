@@ -1,6 +1,6 @@
 # ModelForge
 
-**From expressions to numerical answers.** A Rust toolkit for polynomial parsing, differentiation, integration, regression, and scientific solvers.
+A Rust toolkit for polynomial parsing, differentiation, integration, regression, and scientific solvers.
 
 [Examples](spindalis/examples/README.md) · [Verification](docs/VERIFICATION.md) · [Contributing](docs/CONTRIBUTING.md)
 
