@@ -22,10 +22,19 @@ where
     };
     let polynomial_dx = polynomial.derivate_univariate()?;
     loop {
+        let value = polynomial.eval_univariate(x_curr)?;
+        if value == 0.0 {
+            return Ok(x_curr);
+        }
+        if iter >= itermax {
+            return Err(SolverError::MaxIterationsReached);
+        }
         let xr_old = x_curr;
-        x_curr = xr_old
-            - (polynomial.eval_univariate(x_curr)? / polynomial_dx.eval_univariate(x_curr)?);
+        x_curr = xr_old - (value / polynomial_dx.eval_univariate(x_curr)?);
         iter += 1;
+        if polynomial.eval_univariate(x_curr)? == 0.0 {
+            return Ok(x_curr);
+        }
         if x_curr != 0 as f64 {
             approx_err = ((x_curr - xr_old).abs() / x_curr) * 100.0;
         }
