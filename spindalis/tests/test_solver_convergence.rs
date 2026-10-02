@@ -1,5 +1,5 @@
 use spindalis::polynomials::{IntermediatePolynomial, PolynomialTraits, SimplePolynomial};
-use spindalis::solvers::{Bounds, SolveMode, bisection, newton_raphson_method};
+use spindalis::solvers::{Bounds, SolveMode, SolverError, bisection, newton_raphson_method};
 
 fn midpoint_guess_converges<P: PolynomialTraits>(polynomial: &P) {
     let root = bisection(
@@ -57,4 +57,11 @@ fn newton_initial_zero_root_with_zero_derivative() {
     let root = newton_raphson_method(&polynomial, 0.0, 100, 1e-5, SolveMode::Root)
         .expect("an exact initial root must be recognized before dividing by its derivative");
     assert_eq!(root, 0.0);
+}
+
+#[test]
+fn newton_zero_iteration_budget_does_not_take_a_step() {
+    let polynomial = SimplePolynomial::parse("x").unwrap();
+    let result = newton_raphson_method(&polynomial, 1.0, 0, 1e-5, SolveMode::Root);
+    assert!(matches!(result, Err(SolverError::MaxIterationsReached)));
 }
