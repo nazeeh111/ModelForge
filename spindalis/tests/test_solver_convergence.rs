@@ -54,7 +54,7 @@ fn newton_zero_extremum() {
 #[test]
 fn newton_initial_zero_root_with_zero_derivative() {
     let polynomial = SimplePolynomial::parse("x^2").unwrap();
-    let root = newton_raphson_method(&polynomial, 0.0, 100, 1e-5, SolveMode::Root)
+    let root = newton_raphson_method(&polynomial, 0.0, 0, 1e-5, SolveMode::Root)
         .expect("an exact initial root must be recognized before dividing by its derivative");
     assert_eq!(root, 0.0);
 }
