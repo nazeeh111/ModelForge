@@ -31,7 +31,7 @@ let derivative = polynomial.derivate_univariate()?;
 | Modeling | Regression and numerical reduction utilities |
 | Compile-time parsing | Polynomial macros through `model_forge::polynomials` |
 
-The `model_forge` crate provides the primary namespace. Existing `spindalis`, `spindalis_core`, and `spindalis_macros` crate APIs remain available for compatibility. Their numerical implementations are preserved; the new facade re-exports the same operations. New macros generate ModelForge paths so downstream consumers do not need a separate core dependency.
+The `model_forge` crate provides the primary namespace. Existing `spindalis`, `spindalis_core`, and `spindalis_macros` crate APIs remain available for compatibility. The facade re-exports their operations. Targeted bisection and Newton convergence repairs are recorded in [verification](docs/VERIFICATION.md#solver-convergence-repairs-2026-10-02). New macros generate ModelForge paths so downstream consumers do not need a separate core dependency.
 
 ## Build and verify
 
