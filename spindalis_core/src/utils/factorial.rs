@@ -30,7 +30,7 @@ pub fn gamma_f64(z: f64) -> f64 {
 
 pub fn factorial_f64(n: f64) -> f64 {
     if n < 0.0 {
-        return f64::NAN;
+        return std::primitive::f64::NAN;
     }
     if n.fract() != 0.0 {
         return gamma_f64(n + 1.); // Gamma(n+1) = n!
