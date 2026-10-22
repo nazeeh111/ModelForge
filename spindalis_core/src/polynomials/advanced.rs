@@ -1026,7 +1026,7 @@ impl Visitor for Evaluator {
             Constants::Pi => f64::consts::PI,
             Constants::E => f64::consts::E,
             Constants::Tau => f64::consts::TAU,
-            Constants::Phi => 1.618_033_988_749_895_f64, // f64::consts::PHI
+            Constants::Phi => f64::consts::GOLDEN_RATIO,
         };
         Some(constant)
     }
