@@ -280,26 +280,6 @@ impl<'a> Visitor for Differentiator<'a> {
                 Some(fold_operations(res))
             }
             Operators::Mul => {
-                if *lhs == Expr::Constant(Constants::E)
-                    || matches!(lhs, Expr::BinaryOp { op: Operators::Caret, lhs: l, .. } if **l == Expr::Constant(Constants::E))
-                {
-                    return Some(Expr::BinaryOp {
-                        op: Operators::Mul,
-                        lhs: Box::new(lhs.clone()),
-                        rhs: Box::new(derived_rhs),
-                        paren: false,
-                    });
-                }
-                if *rhs == Expr::Constant(Constants::E)
-                    || matches!(rhs, Expr::BinaryOp { op: Operators::Caret, lhs: l, .. } if **l == Expr::Constant(Constants::E))
-                {
-                    return Some(Expr::BinaryOp {
-                        op: Operators::Mul,
-                        lhs: Box::new(derived_lhs),
-                        rhs: Box::new(rhs.clone()),
-                        paren: false,
-                    });
-                }
                 let left = Expr::BinaryOp {
                     op,
                     lhs: Box::new(lhs.clone()),
@@ -360,15 +340,48 @@ impl<'a> Visitor for Differentiator<'a> {
                 let exp = rhs;
 
                 if *lhs == Expr::Constant(Constants::E) {
-                    return Some(Expr::BinaryOp {
-                        op: Operators::Caret,
-                        lhs: Box::new(lhs.clone()),
-                        rhs: Box::new(exp.clone()),
-                        paren,
-                    });
+                    return Some(fold_operations(Expr::BinaryOp {
+                        op: Operators::Mul,
+                        lhs: Box::new(Expr::BinaryOp {
+                            op: Operators::Caret,
+                            lhs: Box::new(lhs.clone()),
+                            rhs: Box::new(exp.clone()),
+                            paren,
+                        }),
+                        rhs: Box::new(derived_rhs),
+                        paren: false,
+                    }));
                 }
 
                 let variable: String = self.var.to_string();
+                // A parameter base may evaluate to zero; ln(base) is not valid there.
+                // Extend this branch only for bases whose positivity is known here.
+                let positive_base = match lhs {
+                    Expr::Number(base) => *base > 0.0,
+                    Expr::Constant(Constants::E | Constants::Pi | Constants::Tau | Constants::Phi) => true,
+                    _ => false,
+                };
+                if positive_base && contains_var(exp, self.var) {
+                    return Some(fold_operations(Expr::BinaryOp {
+                        op: Operators::Mul,
+                        lhs: Box::new(Expr::BinaryOp {
+                            op: Operators::Mul,
+                            lhs: Box::new(Expr::Function {
+                                func: Functions::Ln,
+                                inner: Box::new(lhs.clone()),
+                            }),
+                            rhs: Box::new(Expr::BinaryOp {
+                                op: Operators::Caret,
+                                lhs: Box::new(lhs.clone()),
+                                rhs: Box::new(exp.clone()),
+                                paren: false,
+                            }),
+                            paren: false,
+                        }),
+                        rhs: Box::new(derived_rhs),
+                        paren: false,
+                    }));
+                }
                 if *exp == Expr::Variable(variable) {
                     return Some(Expr::BinaryOp {
                         op: Operators::Mul,
@@ -424,6 +437,9 @@ impl<'a> Visitor for Differentiator<'a> {
     }
 
     fn visit_function(&self, func: &Functions, value: &Expr) -> Option<Expr> {
+        if !contains_var(value, self.var) {
+            return Some(Expr::Number(0.));
+        }
         let mut res = match func {
             Functions::Sin => Expr::Function {
                 func: Functions::Cos,
@@ -551,8 +567,8 @@ impl<'a> Visitor for Differentiator<'a> {
         })
     }
 
-    fn visit_constant(&self, cnst: &Constants) -> Option<Expr> {
-        Some(Expr::Constant(*cnst))
+    fn visit_constant(&self, _: &Constants) -> Option<Expr> {
+        Some(Expr::Number(0.))
     }
 
     fn visit_number(&self, _: f64) -> Option<Expr> {
