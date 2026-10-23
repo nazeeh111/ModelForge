@@ -1,5 +1,7 @@
 # ModelForge
 
+**From a polynomial expression to a numerical answer, in Rust.**
+
 Use polynomial parsing and calculus alongside numerical solvers from one Rust namespace. ModelForge re-exports the retained Spindalis crates and provides macros that work through the `model_forge` import; it is a facade over those implementations.
 
 [Examples](spindalis/examples/README.md) · [Verification](docs/VERIFICATION.md) · [Contributing](docs/CONTRIBUTING.md)
@@ -30,6 +32,16 @@ fn main() -> Result<(), PolynomialError> {
     Ok(())
 }
 ```
+
+The example carries one expression through three operations:
+
+| Operation | Result |
+| --- | --- |
+| Parse `3x^2+2x+1` | Coefficients `[1, 2, 3]`, ordered from the constant term upward |
+| Evaluate at `x = 2` | `17` |
+| Differentiate | `6x + 2`, stored as `[2, 6]` |
+
+The derivative is another polynomial, so it can be evaluated with the same API. These are floating-point operations; the assertions above check this particular example, not arbitrary numerical accuracy.
 
 ## What is inside
 
