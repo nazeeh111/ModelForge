@@ -123,7 +123,11 @@ impl std::fmt::Display for SimplePolynomial {
                 match f.precision() {
                     Some(p) => {
                         let formatted = format!("{:.*}", p, abs_coeff);
-                        let trimmed = formatted.trim_end_matches('0').trim_end_matches('.');
+                        let trimmed = if p == 0 {
+                            formatted.as_str()
+                        } else {
+                            formatted.trim_end_matches('0').trim_end_matches('.')
+                        };
                         write!(f, "{}", trimmed)?;
                     }
                     None => write!(f, "{}", abs_coeff)?,

@@ -34,6 +34,19 @@ where
     Ok(sum)
 }
 
+/// Integrate by successively refining the trapezoidal rule and extrapolating.
+///
+/// `tolerance` is a relative percentage. Reaching `maxiter` returns
+/// `MaxIterationsReached`, even if that final refinement meets the tolerance.
+/// For compatibility, budgets of zero and one still evaluate the initial
+/// trapezoid and first refinement; evaluator errors take precedence over the
+/// budget error. Equal-zero estimates require a confirming refinement.
+///
+/// Through refinement `m`, this implementation makes `2^(m + 1) + m` integrand
+/// evaluations, uses O(m) row storage, and performs O(m^2) extrapolation work.
+/// A large iteration limit can therefore require exponentially many samples;
+/// checked segment multiplication prevents integer overflow, not excessive work.
+/// Finite sampled agreement does not guarantee accuracy between sampled points.
 pub fn romberg_definite<P>(
     poly: &P,
     start: f64,
@@ -44,36 +57,40 @@ pub fn romberg_definite<P>(
 where
     P: PolynomialTraits,
 {
-    let maxiter = maxiter as usize;
-    let mut romberg_table: Vec<Vec<f64>> = vec![vec![0.0; 10]; 10];
-    let mut iter = 0_usize;
-    let mut segments = 1;
-    romberg_table[1][1] = trapezoidal_rule(poly, start, end, segments)?;
-
-    loop {
-        iter += 1;
-        segments = 2_u32.pow(iter as u32) as usize;
-
-        romberg_table[iter + 1][1] = trapezoidal_rule(poly, start, end, segments)?;
-        for k in 2..=iter + 1 {
-            let j = 2 + iter - k;
-            let p = 4_usize.pow((k as u32) - 1) as f64;
-
-            romberg_table[j][k] =
-                (p * romberg_table[j + 1][k - 1] - romberg_table[j][k - 1]) / (p - 1.0);
+    let mut previous = vec![trapezoidal_rule(poly, start, end, 1)?];
+    let mut segments = 1_usize;
+    let mut previous_zero_estimate = false;
+    for iter in 1..=maxiter.max(1) {
+        segments = segments.checked_mul(2)
+            .ok_or(IntegralError::MaxIterationsReached)?;
+        let mut current = vec![trapezoidal_rule(poly, start, end, segments)?];
+        let mut factor = 4.0;
+        for (order, prior) in previous.iter().enumerate() {
+            current.push((factor * current[order] - prior) / (factor - 1.0));
+            factor *= 4.0;
         }
-        let approx_err = ((romberg_table[1][iter + 1] - romberg_table[2][iter]).abs()
-            / romberg_table[1][iter + 1])
-            .abs()
-            * 100.0;
-        if iter >= maxiter || approx_err <= tolerance {
-            break;
+        let estimate = current[current.len() - 1];
+        let difference = (estimate - current[current.len() - 2]).abs();
+        // Equal finite estimates include zero integrals, for which relative error is 0/0.
+        let approx_err = if difference == 0.0 && estimate.is_finite() {
+            0.0
+        } else {
+            difference / estimate.abs() * 100.0
+        };
+        // Preserve the existing iteration-budget failure contract.
+        if iter >= maxiter {
+            return Err(IntegralError::MaxIterationsReached);
         }
+        // Confirm an equal-zero estimate with another refinement: the initial nodes
+        // can all be roots of a nonzero polynomial.
+        let zero_estimate = estimate == 0.0 && difference == 0.0;
+        if approx_err <= tolerance && (!zero_estimate || previous_zero_estimate) {
+            return Ok(estimate);
+        }
+        previous_zero_estimate = zero_estimate;
+        previous = current;
     }
-    if iter >= maxiter {
-        return Err(IntegralError::MaxIterationsReached);
-    }
-    Ok(romberg_table[1][iter + 1])
+    Err(IntegralError::MaxIterationsReached)
 }
 
 fn trapezoidal_rule<P>(

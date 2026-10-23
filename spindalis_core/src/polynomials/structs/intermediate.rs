@@ -78,8 +78,11 @@ impl PolynomialTraits for IntermediatePolynomial {
                 variables: self.variables.clone(),
             });
         }
-        let evaluated =
-            eval_intermediate_polynomial(&self.terms, &[(self.variables[0].clone(), point)])?;
+        let vars: Vec<_> = self.variables.first()
+            .map(|var| (var.clone(), point))
+            .into_iter()
+            .collect();
+        let evaluated = eval_intermediate_polynomial(&self.terms, &vars)?;
         Ok(evaluated)
     }
 
@@ -100,7 +103,10 @@ impl PolynomialTraits for IntermediatePolynomial {
             });
         }
         Ok(Self {
-            terms: partial_derivative(&self.terms, &self.variables[0]).terms,
+            terms: partial_derivative(
+                &self.terms,
+                self.variables.first().map(String::as_str).unwrap_or("x"),
+            ).terms,
             variables: self.variables.clone(),
         })
     }
@@ -179,7 +185,11 @@ impl std::fmt::Display for IntermediatePolynomial {
                 match f.precision() {
                     Some(p) => {
                         let formatted = format!("{:.*}", p, abs_coeff);
-                        let trimmed = formatted.trim_end_matches('0').trim_end_matches('.');
+                        let trimmed = if p == 0 {
+                            formatted.as_str()
+                        } else {
+                            formatted.trim_end_matches('0').trim_end_matches('.')
+                        };
                         write!(f, "{}", trimmed)?
                     }
                     None => write!(f, "{}", abs_coeff)?,
@@ -193,7 +203,11 @@ impl std::fmt::Display for IntermediatePolynomial {
                     match f.precision() {
                         Some(p) => {
                             let formatted = format!("^{:.*}", p, exponent);
-                            let trimmed = formatted.trim_end_matches('0').trim_end_matches('.');
+                            let trimmed = if p == 0 {
+                                formatted.as_str()
+                            } else {
+                                formatted.trim_end_matches('0').trim_end_matches('.')
+                            };
                             write!(f, "{}", trimmed)?
                         }
                         None => write!(f, "^{}", exponent)?,
