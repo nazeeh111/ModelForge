@@ -4,4 +4,5 @@ pub mod givens;
 pub mod interface;
 pub mod primitives;
 pub mod symmetric;
+#[cfg(test)]
 mod verify;

@@ -4,24 +4,8 @@ use crate::reduction::matrix::francis::constants::{
 use crate::reduction::matrix::francis::{complex, primitives, symmetric};
 use crate::solvers::SolverError;
 use jedvek::Matrix2D;
-// INVARIANT: every "full_*" function in this file is a 1:1 mirror of its
-// non-"full_" counterpart (same reduction logic, same reflectors, same
-// order of operations) — the only difference is that "full_*" versions
-// additionally accumulate the rotation/Q matrix, at ~2x the flop cost.
-// Non-"full_" versions exist purely for callers who don't need Q.
-//
-// If you change the core reduction logic in one member of a pair, you
-// MUST make the identical change in its counterpart. There is currently
-// no compiler-level enforcement of this — a change to only one side will
-// build and pass unrelated tests silently.
-//
-// Enforced by: {
-//    test_decomp_sym_matches_decomp_sym_with_rotation,
-//    test_decomp_cpx_matches_decomp_cpx_with_rotation
-// }
-//
-// Run that test after touching ANY function here before considering
-// the change complete.
+// verify.rs tracks rotations to check reconstruction and parity with these kernels.
+// Keep those test helpers aligned when changing the numerical operations here.
 
 // Recommended parameters in constants
 // Note: For real-world inputs like A^T*A covariance matrices, explicit forming
@@ -204,34 +188,14 @@ mod test_francis_interface {
     }
     #[test]
     fn test_francis_lq_sym() {
-        let trials = 10_000;
-        let mut trace_failures = 0;
-        for _ in 0..trials {
-            let (_, trace_ok) = check_francis_lq_sym();
-            if !trace_ok {
-                trace_failures += 1;
-            }
-        }
-        println!("francis_lq_sym: {trace_failures} trace mismatches / {trials}");
-        assert!(
-            trace_failures < 10,
-            "too many trace mismatches: {trace_failures}"
-        );
+        // The helper resets seed 42, so repeated calls produce the same matrix.
+        let (_, trace_ok) = check_francis_lq_sym();
+        assert!(trace_ok, "symmetric decomposition changed the deterministic fixture trace");
     }
     #[test]
     fn test_francis_lq_cpx() {
-        let trials = 10_000;
-        let mut trace_failures = 0;
-        for _ in 0..trials {
-            let (_, trace_ok) = check_francis_lq_cpx();
-            if !trace_ok {
-                trace_failures += 1;
-            }
-        }
-        println!("francis_lq_cpx: {trace_failures} trace mismatches / {trials}");
-        assert!(
-            trace_failures < 10,
-            "too many trace mismatches: {trace_failures}"
-        );
+        // The helper resets seed 42, so repeated calls produce the same matrix.
+        let (_, trace_ok) = check_francis_lq_cpx();
+        assert!(trace_ok, "complex decomposition changed the deterministic fixture trace");
     }
 }

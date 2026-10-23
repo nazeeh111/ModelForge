@@ -547,32 +547,6 @@ pub(crate) fn fold_operations(expr: Expr) -> Expr {
                     _,
                 ) => Expr::Number(0.),
 
-                // 1 / x / y -> y / x
-                (
-                    Operators::Div,
-                    Expr::BinaryOp {
-                        op: Operators::Div,
-                        lhs: dlhs,
-                        rhs: drhs,
-                        ..
-                    },
-                    r,
-                ) => {
-                    let numerator = Expr::BinaryOp {
-                        op: Operators::Mul,
-                        lhs: Box::new(*dlhs),
-                        rhs: Box::new(r),
-                        paren: false,
-                    };
-                    let folded_numerator = fold_operations(numerator);
-                    Expr::BinaryOp {
-                        op: Operators::Div,
-                        lhs: Box::new(folded_numerator),
-                        rhs: Box::new(*drhs),
-                        paren: false,
-                    }
-                }
-
                 // (-3)/2 -> -(3/2), (-3x)*2 -> -(3x*2)
                 (
                     Operators::Div | Operators::Mul,
@@ -2139,9 +2113,11 @@ mod tests {
             let expr = "3/x/y";
             let poly = Polynomial::parse(expr).unwrap();
             let folded = fold_operations(poly.expr);
-            let expected = Polynomial::parse("3y/x").unwrap();
-
-            assert_eq!(Polynomial { expr: folded }, expected);
+            let actual = Polynomial { expr: folded };
+            for (x, y) in [(2.0, 4.0), (-2.0, 4.0), (3.0, -5.0)] {
+                let value = actual.eval_multivariate(&[("x", x), ("y", y)]).unwrap();
+                assert!((value - 3.0 / (x * y)).abs() < 1e-12);
+            }
         }
 
         #[test]

@@ -309,7 +309,7 @@ mod tests {
     fn add_div_div_deriv() {
         let parsed = Polynomial::parse("(x+45)/(34+y)/y").unwrap();
         let result = advanced_derivative(&parsed, "x").unwrap();
-        let expected = Polynomial::parse("y/(34+y)").unwrap();
+        let expected = Polynomial::parse("1/(34+y)/y").unwrap();
         assert_eq!(result, expected);
     }
 }
