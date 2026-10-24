@@ -136,6 +136,16 @@ Ensure that input vectors are not empty and are of the same length to avoid erro
   - Models the relationship between the independent variable and the dependent
   variable as an n-th degree polynomial to fit non-linear data patterns.
 
+`PolynomialRegression::try_fit(&x, &y)` checks matching, nonempty inputs and
+returns `PolynomialFitError::Input` or `NormalSystem`, preserving the underlying
+error. The existing `LinearRegressor::fit` signature is unchanged: a singular
+normal-system refusal produces requested-length NaN coefficients and NaN metrics;
+other solver errors still panic. Legacy input lengths/emptiness stay unchecked,
+and its singular fallback can change invalid-input metrics. `Some(NaN)` from
+slope helpers indicates coefficient count, not a valid fit. A successful constant-response fit
+can have undefined R², so `Ok` does not promise finite metrics, conditioning or
+statistical validity. See `linear_regression.rs` for checked recovery.
+
 ### System of Linear Equations
 
 - Gaussian Elimination

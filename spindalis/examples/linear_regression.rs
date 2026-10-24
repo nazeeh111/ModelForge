@@ -1,7 +1,8 @@
 use spindalis::prelude::*;
+use spindalis::solvers::SolverError;
 use spindalis::regressors::linear::{batch_validate_input, validate_single_input};
 use spindalis::regressors::{
-    GradientDescentRegression, LeastSquaresRegression, PolynomialRegression,
+    GradientDescentRegression, LeastSquaresRegression, PolynomialFitError, PolynomialRegression,
 };
 
 fn main() {
@@ -71,7 +72,17 @@ fn main() {
     println!("Linear regression using Polynomial Regression");
     let poly_regression = PolynomialRegression { order: 2 };
 
-    let model = poly_regression.fit(&x, &y);
+    let model = match poly_regression.try_fit(&x, &y) {
+        Ok(model) => model,
+        Err(PolynomialFitError::NormalSystem(SolverError::SingularMatrix)) => {
+            eprintln!("Polynomial fit refused: predictors do not support this normal-system solve.");
+            return;
+        }
+        Err(error) => {
+            eprintln!("Polynomial fit failed: {error:?}");
+            return;
+        }
+    };
 
     let slopes = model.slopes().unwrap();
     for (i, slope) in slopes.iter().enumerate() {

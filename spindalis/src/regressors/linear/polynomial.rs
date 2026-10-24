@@ -1,13 +1,37 @@
-use crate::regressors::linear::{LinearModel, LinearRegressor};
-use crate::solvers::gaussian_elimination;
+use crate::regressors::linear::{
+    LinearModel, LinearRegressor, LinearRegressorError, validate_single_input,
+};
+use crate::solvers::{SolverError, gaussian_elimination};
 
+/// Failure of checked input validation or the polynomial normal-system solve.
+#[derive(Debug)]
+pub enum PolynomialFitError {
+    Input(LinearRegressorError),
+    NormalSystem(SolverError),
+}
+
+/// Polynomial regression with checked and legacy fitting entry points.
+///
+/// `try_fit` reports input and solver errors. The legacy `LinearRegressor::fit`
+/// maps a normal-system singular refusal to requested-length NaN coefficients
+/// and NaN metrics. Legacy input lengths/emptiness remain unchecked; the singular
+/// fallback can change invalid-input metrics too. Other solver errors still panic.
 pub struct PolynomialRegression {
     pub order: usize,
 }
 
-impl LinearRegressor for PolynomialRegression {
+impl PolynomialRegression {
+    /// Validate matching, nonempty inputs, then fit using the existing method.
+    ///
+    /// `Ok` means the normal-system solve completed. It does not guarantee finite
+    /// metrics or statistical validity; constant responses have undefined R².
+    pub fn try_fit(&self, x: &[f64], y: &[f64]) -> Result<LinearModel, PolynomialFitError> {
+        validate_single_input(x, y).map_err(PolynomialFitError::Input)?;
+        self.fit_model(x, y).map_err(PolynomialFitError::NormalSystem)
+    }
+
     #[allow(clippy::needless_range_loop)]
-    fn fit(&self, x: &[f64], y: &[f64]) -> LinearModel {
+    fn fit_model(&self, x: &[f64], y: &[f64]) -> Result<LinearModel, SolverError> {
         let order = self.order;
 
         let mut matrix: Vec<Vec<f64>> = vec![vec![0.0; order + 1]; order + 1];
@@ -26,7 +50,7 @@ impl LinearRegressor for PolynomialRegression {
                 .sum::<f64>();
             rhs[i] = poly_sum;
         }
-        let coefficients = gaussian_elimination(&matrix, &rhs, 1e-5).unwrap();
+        let coefficients = gaussian_elimination(&matrix, &rhs, 1e-5)?;
 
         let length = y.len() as f64;
 
@@ -49,10 +73,24 @@ impl LinearRegressor for PolynomialRegression {
         let std_err = (sq_residual / (length - 2.0)).sqrt();
         let r2 = (sq_total - sq_residual) / sq_total;
 
-        LinearModel {
+        Ok(LinearModel {
             coefficients,
             std_err,
             r2,
+        })
+    }
+}
+
+impl LinearRegressor for PolynomialRegression {
+    fn fit(&self, x: &[f64], y: &[f64]) -> LinearModel {
+        match self.fit_model(x, y) {
+            Ok(model) => model,
+            Err(SolverError::SingularMatrix) => LinearModel {
+                coefficients: vec![f64::NAN; self.order + 1],
+                std_err: f64::NAN,
+                r2: f64::NAN,
+            },
+            Err(error) => panic!("Polynomial normal system failed: {error:?}"),
         }
     }
 }

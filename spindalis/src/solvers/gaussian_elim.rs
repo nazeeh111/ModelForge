@@ -34,6 +34,9 @@ where
                 scale_factor[i] = coeff_matrix[i][j].abs();
             }
         }
+        if scale_factor[i] == 0.0 {
+            return Err(SolverError::SingularMatrix);
+        }
     }
     forward_elimination(
         &mut coeff_matrix,
@@ -44,9 +47,10 @@ where
         &mut error_flag,
     );
 
-    if error_flag != -1 {
-        back_substitution(&coeff_matrix, size, &rhs_vector, &mut solution);
+    if error_flag == -1 {
+        return Err(SolverError::SingularMatrix);
     }
+    back_substitution(&coeff_matrix, size, &rhs_vector, &mut solution);
     Ok(solution)
 }
 
@@ -60,7 +64,7 @@ fn forward_elimination(
 ) {
     for k in 0..(size - 1) {
         partial_pivot(coeff_matrix, rhs_vector, scale_factor, size, k);
-        if (coeff_matrix[k][k] / scale_factor[k]).abs() < tol {
+        if coeff_matrix[k][k] == 0.0 || (coeff_matrix[k][k] / scale_factor[k]).abs() < tol {
             *error_flag = -1;
             return;
         }
@@ -72,7 +76,9 @@ fn forward_elimination(
             rhs_vector[i] -= factor * rhs_vector[k]
         }
     }
-    if (coeff_matrix[size - 1][size - 1] / scale_factor[size - 1]).abs() < tol {
+    if coeff_matrix[size - 1][size - 1] == 0.0
+        || (coeff_matrix[size - 1][size - 1] / scale_factor[size - 1]).abs() < tol
+    {
         *error_flag = -1;
     }
 }
