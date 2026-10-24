@@ -55,12 +55,13 @@ fn main() {
         ),
     ];
     for (bound, true_root) in params {
+        let (lower, upper) = (bound.lower, bound.upper);
         let result = bisection(&parsed, bound, error_tol, itermax, SolveMode::Root);
 
         match result {
             Ok(x) => {
                 println!(
-                    "Approximate root coords between x=-0.2 and x=0: ({x}, {:.5})",
+                    "Approximate root coords between x={lower} and x={upper}: ({x}, {:.5})",
                     parsed.eval_univariate(x).unwrap()
                 );
 
