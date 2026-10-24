@@ -5,28 +5,28 @@ use spindalis::solvers::{SolverError, gaussian_elimination};
 #[test]
 fn singular_dependent_rows_are_errors_for_both_rhs_cases() {
     for rhs in [[3.0, 6.0], [3.0, 7.0]] {
-        assert!(matches!(gaussian_elimination(&vec![vec![1.0, 2.0], vec![2.0, 4.0]], &rhs, 1e-12), Err(SolverError::SingularMatrix)));
+        assert!(matches!(gaussian_elimination(vec![vec![1.0, 2.0], vec![2.0, 4.0]], &rhs, 1e-12), Err(SolverError::SingularMatrix)));
     }
 }
 
 #[test]
 fn zero_rows_and_zero_scalar_are_errors() {
-    assert!(matches!(gaussian_elimination(&vec![vec![0.0]], &[0.0], 1e-12), Err(SolverError::SingularMatrix)));
+    assert!(matches!(gaussian_elimination(vec![vec![0.0]], &[0.0], 1e-12), Err(SolverError::SingularMatrix)));
     for matrix in [[[0.0, 0.0], [1.0, 2.0]], [[1.0, 2.0], [0.0, 0.0]]] {
-        assert!(matches!(gaussian_elimination(&matrix.map(|row| row.to_vec()).to_vec(), &[0.0, 0.0], 1e-12), Err(SolverError::SingularMatrix)));
+        assert!(matches!(gaussian_elimination(matrix.map(|row| row.to_vec()).to_vec(), &[0.0, 0.0], 1e-12), Err(SolverError::SingularMatrix)));
     }
 }
 
 #[test]
 fn exact_zero_pivot_is_refused_even_at_zero_tolerance() {
-    assert!(matches!(gaussian_elimination(&vec![vec![1.0, 2.0], vec![2.0, 4.0]], &[3.0, 6.0], 0.0), Err(SolverError::SingularMatrix)));
+    assert!(matches!(gaussian_elimination(vec![vec![1.0, 2.0], vec![2.0, 4.0]], &[3.0, 6.0], 0.0), Err(SolverError::SingularMatrix)));
 }
 
 #[test]
 fn pivoted_success_has_the_known_solution_and_residual() {
     let matrix = [[0.0, 2.0], [1.0, 3.0]];
     let rhs = [4.0, 7.0];
-    let solution = gaussian_elimination(&matrix.map(|row| row.to_vec()).to_vec(), &rhs, 1e-12).unwrap();
+    let solution = gaussian_elimination(matrix.map(|row| row.to_vec()).to_vec(), &rhs, 1e-12).unwrap();
     assert_eq!(solution, [1.0, 2.0]);
     for (row, expected) in matrix.iter().zip(rhs) {
         assert!((row.iter().zip(&solution).map(|(a, x)| a*x).sum::<f64>()-expected).abs() < 1e-12);
